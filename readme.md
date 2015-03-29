@@ -8,7 +8,7 @@ dependencies preventing Gradle from making maximum use of all those cpu cores we
 
 
 ![Spring Framework :: test](https://raw.githubusercontent.com/kimble/gradle-task-profiling-plugin/master/docs/sample.png)
-
+[Live demo](http://developer-b.com/sandbox/gradle-profiler/)
 
 Give it a spin
 --------------

@@ -1,0 +1,199 @@
+(function() {
+    "use strict";
+
+
+
+    var taskColorMapping = {
+        'compileJava': '#216572',
+        'classes': '#B8EF25',
+        'jar': '#F54550',
+
+        'processResources': '#F56406',
+
+        'test': '#88C454',
+        'testClasses': '#5D9B27',
+        'compileTestJava': '#64C755',
+        'processTestResources': '#5D9B65',
+
+        'build': '#CD63E9'
+    };
+
+
+    function attrNamed(name) {
+        return function(obj) {
+            return obj[name];
+        }
+    }
+
+
+    function metadata(metadata) {
+        d3.select("#projectName .title").text(metadata.description || metadata.project);
+        d3.select("#projectName .directory").text(function() {
+            return " :: " + metadata.directory;
+        });
+
+        d3.select("ul#startedTasks").selectAll("li")
+            .data(metadata.startParameterTaskNames)
+            .enter()
+                .append("li")
+                .text(function(d) { return d; })
+    }
+
+    function plot(tasks) {
+        var max = d3.max(tasks, function(d) {
+            return d.finished;
+        });
+        var min = d3.min(tasks, function(d) {
+            return d.started;
+        });
+
+        var threadNames = tasks.map(function(obj) { return obj.threadName; });
+        threadNames = threadNames.filter(function(v,i) { return threadNames.indexOf(v) == i; });
+
+        var cellHeight = 30;
+
+        var w = 1170;
+        var h = threadNames.length * cellHeight * 2;
+
+
+
+
+        var x = d3.scale.linear()
+            .domain([min, max])
+            .range([0, w]);
+
+        var y = d3.scale.linear()
+            .domain([0, threadNames.length])
+            .range([30, h]);
+
+
+        var xAxis = d3.svg.axis()
+            .tickFormat(function(v) {
+                return v / 1000 + "s";
+            })
+            .tickSize(3)
+            .orient("top")
+            .scale(x);
+
+        var zoom = d3.behavior.zoom()
+            .x(x)
+            .on("zoom", onZoom);
+
+
+        var svg = d3.select("#scene")
+            .append("svg")
+            .attr("width", w)
+            .attr("height", h)
+            .call(zoom);
+
+
+        svg.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(0, 15)")
+                .call(xAxis);
+
+
+
+        function onZoom() {
+            svg.select(".axis").call(xAxis);
+
+            var task = svg.selectAll("g.task")
+                .data(tasks, attrNamed("path"))
+                .attr("transform", function(d) {
+                    return "translate(" + x(d.started) + "," + y(threadNames.indexOf(d.threadName)) + ")";
+                });
+
+            task.select("rect")
+                .attr("width", function(d) {
+                    return x(d.finished)- x(d.started);
+                });
+        }
+
+
+
+        var enter = svg.selectAll("g.task")
+            .data(tasks, attrNamed("path"))
+            .enter();
+
+
+        var taskGroup = enter.append("g")
+            .attr("class", "task")
+            .attr("transform", function(d) {
+                return "translate(" + x(d.started) + "," + y(threadNames.indexOf(d.threadName)) + ")";
+            });
+
+
+        var infoGroup = taskGroup.append("g")
+            .attr("class", "task-info")
+            .attr("data-path", attrNamed("path"))
+            .attr("transform", "translate(0, " + (cellHeight * 1.4) + ")");
+
+        infoGroup.append("text")
+            .text(function(d) {
+                return d.path;
+            });
+
+        infoGroup.append("text")
+            .attr("y", 15)
+            .text(function(d) {
+                return (d.finished - d.started) + " ms";
+            });
+
+
+        var eg = taskGroup.append("g");
+
+
+        eg.append("rect")
+            .attr("x", "0")
+            .attr("y", "0")
+            .attr("rx", 4)
+            .attr("ry", 4)
+            .attr("width", function(d) {
+                return x(d.finished)- x(d.started);
+            })
+            .attr("height", cellHeight)
+            .style("fill", function(d) {
+                if (taskColorMapping.hasOwnProperty(d.name)) {
+                    return taskColorMapping[d.name];
+                }
+                else {
+                    return "#222";
+                }
+            });
+
+
+        eg.append("text")
+            .attr("x", 5)
+            .attr("y", (cellHeight / 2) + 5)
+            .attr("text-anchor", "start")
+            .attr("fill", "white")
+            .text(attrNamed("path"));
+
+        eg.on('mouseover', function(d) {
+            d3.selectAll('g.task')
+                .classed('blurred', function(d2) {
+                    return d.path != d2.path && d.dependsOn.indexOf(d2.path) < 0;
+                });
+
+            d3.select(this).classed("focused", true);
+            d3.select(".task-info[data-path='" + d.path + "']")
+                .classed("active", true);
+        });
+
+        eg.on('mouseout', function() {
+            d3.selectAll('g.task')
+                .classed("blurred", false)
+                .classed("focused", false);
+
+            d3.selectAll(".task-info")
+                .classed("active", false);
+        });
+
+    }
+
+
+    d3.json("profile-data.json", function(d) {
+        metadata(d.metadata);
+        plot(d.tasks);
+    });
+})();

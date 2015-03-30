@@ -2,21 +2,28 @@
     "use strict";
 
 
+    
+    var taskColor = (function() {
+        var mapping = {
+            'compileJava': '#216572',
+            'classes': '#B8EF25',
+            'jar': '#F54550',
 
-    var taskColorMapping = {
-        'compileJava': '#216572',
-        'classes': '#B8EF25',
-        'jar': '#F54550',
+            'processResources': '#F56406',
 
-        'processResources': '#F56406',
+            'test': '#88C454',
+            'testClasses': '#5D9B27',
+            'compileTestJava': '#64C755',
+            'processTestResources': '#5D9B65',
 
-        'test': '#88C454',
-        'testClasses': '#5D9B27',
-        'compileTestJava': '#64C755',
-        'processTestResources': '#5D9B65',
+            'build': '#CD63E9'
+        };
 
-        'build': '#CD63E9'
-    };
+        return function(d) {
+            return mapping.hasOwnProperty(d.name) ? mapping[d.name] : "#333";
+        }
+    })();
+
 
 
     function attrNamed(name) {
@@ -173,14 +180,7 @@
                 return x(d.finished)- x(d.started);
             })
             .attr("height", rowHeight)
-            .style("fill", function(d) {
-                if (taskColorMapping.hasOwnProperty(d.name)) {
-                    return taskColorMapping[d.name];
-                }
-                else {
-                    return "#222";
-                }
-            });
+            .style("fill", taskColor);
 
 
         eg.append("text")

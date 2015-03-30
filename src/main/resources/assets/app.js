@@ -50,10 +50,10 @@
         var threadNames = tasks.map(function(obj) { return obj.threadName; });
         threadNames = threadNames.filter(function(v,i) { return threadNames.indexOf(v) == i; });
 
-        var cellHeight = 30;
+        var rowHeight = 30;
 
-        var w = 1170;
-        var h = threadNames.length * cellHeight * 2;
+        var w = 1170; // Given by Bootstrap CSS
+        var h = threadNames.length * rowHeight * 2;
 
 
 
@@ -93,6 +93,24 @@
                 .call(xAxis);
 
 
+        // Figures out how many characters to show
+        function boxText(d) {
+            var width = x(d.finished)- x(d.started);
+            var maxCharacters = width / 12; // Could probably use svg to calculate the actual with of the text..?
+            var text = d.path;
+
+            if (text.length > maxCharacters) {
+                text = text.substring(0, maxCharacters);
+
+                if (text.length > 2) {
+                    text += text.substr(0, text.length - 2) + "..";
+                }
+            }
+
+            return text;
+        }
+
+
 
         function onZoom() {
             svg.select(".axis").call(xAxis);
@@ -107,6 +125,9 @@
                 .attr("width", function(d) {
                     return x(d.finished)- x(d.started);
                 });
+
+            task.select("text.path")
+                .text(boxText);
         }
 
 
@@ -126,7 +147,7 @@
         var infoGroup = taskGroup.append("g")
             .attr("class", "task-info")
             .attr("data-path", attrNamed("path"))
-            .attr("transform", "translate(0, " + (cellHeight * 1.4) + ")");
+            .attr("transform", "translate(0, " + (rowHeight * 1.4) + ")");
 
         infoGroup.append("text")
             .text(function(d) {
@@ -151,7 +172,7 @@
             .attr("width", function(d) {
                 return x(d.finished)- x(d.started);
             })
-            .attr("height", cellHeight)
+            .attr("height", rowHeight)
             .style("fill", function(d) {
                 if (taskColorMapping.hasOwnProperty(d.name)) {
                     return taskColorMapping[d.name];
@@ -163,12 +184,15 @@
 
 
         eg.append("text")
+            .attr("class", "path")
             .attr("x", 5)
-            .attr("y", (cellHeight / 2) + 5)
+            .attr("y", (rowHeight / 2) + 5)
             .attr("text-anchor", "start")
             .attr("fill", "white")
-            .text(attrNamed("path"));
+            .text(boxText);
 
+
+        // Show additional information
         eg.on('mouseover', function(d) {
             d3.selectAll('g.task')
                 .classed('blurred', function(d2) {
@@ -180,6 +204,7 @@
                 .classed("active", true);
         });
 
+        // Hide additional information
         eg.on('mouseout', function() {
             d3.selectAll('g.task')
                 .classed("blurred", false)

@@ -48,12 +48,8 @@
 
     // Plot tasks on chart
     function plot(tasks) {
-        var max = d3.max(tasks, function(d) {
-            return d.finished;
-        });
-        var min = d3.min(tasks, function(d) {
-            return d.started;
-        });
+        var max = d3.max(tasks, attrNamed("finished"));
+        var min = d3.min(tasks, attrNamed("started"));
 
         var threadNames = tasks.map(function(obj) { return obj.threadName; });
         threadNames = threadNames.filter(function(v,i) { return threadNames.indexOf(v) == i; });

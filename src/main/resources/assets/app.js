@@ -2,7 +2,7 @@
     "use strict";
 
 
-    
+
     var taskColor = (function() {
         var mapping = {
             'compileJava': '#216572',
@@ -32,7 +32,7 @@
         }
     }
 
-
+    // Update project metadata
     function metadata(metadata) {
         d3.select("#projectName .title").text(metadata.description || metadata.project);
         d3.select("#projectName .directory").text(function() {
@@ -46,6 +46,7 @@
                 .text(function(d) { return d; })
     }
 
+    // Plot tasks on chart
     function plot(tasks) {
         var max = d3.max(tasks, function(d) {
             return d.finished;
@@ -73,6 +74,9 @@
             .domain([0, threadNames.length])
             .range([30, h]);
 
+        var calculateWidth = function(d) {
+            return x(d.finished)- x(d.started);
+        };
 
         var xAxis = d3.svg.axis()
             .tickFormat(function(v) {
@@ -128,13 +132,8 @@
                     return "translate(" + x(d.started) + "," + y(threadNames.indexOf(d.threadName)) + ")";
                 });
 
-            task.select("rect")
-                .attr("width", function(d) {
-                    return x(d.finished)- x(d.started);
-                });
-
-            task.select("text.path")
-                .text(boxText);
+            task.select("rect").attr("width", calculateWidth);
+            task.select("text.path").text(boxText);
         }
 
 
@@ -176,9 +175,7 @@
             .attr("y", "0")
             .attr("rx", 4)
             .attr("ry", 4)
-            .attr("width", function(d) {
-                return x(d.finished)- x(d.started);
-            })
+            .attr("width", calculateWidth)
             .attr("height", rowHeight)
             .style("fill", taskColor);
 
